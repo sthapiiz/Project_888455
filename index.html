@@ -1,0 +1,1442 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="GreenTrace — Blockchain food traceability from farm to table on Ethereum Sepolia." />
+    <title>GreenTrace — Blockchain Food Traceability</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <!-- Ethers.js v6 UMD CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+    <style>
+      :root {
+        --dark-green: #166534;
+        --green: #22c55e;
+        --light-green: #dcfce7;
+        --white: #ffffff;
+        --bg: #f8fafc;
+        --text: #17201b;
+        --gray: #64748b;
+        --border: #e2e8f0;
+        --shadow: 0 10px 30px rgba(22, 101, 52, 0.08);
+        --radius: 18px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      button, input, select, textarea {
+        font-family: inherit;
+      }
+
+      .app-shell {
+        min-height: 100vh;
+      }
+
+      .container {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+
+      .file-banner {
+        background: #eff6ff;
+        border-bottom: 1px solid #bfdbfe;
+        color: #1e40af;
+        padding: 10px 16px;
+        font-size: 0.9rem;
+      }
+
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .nav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        min-height: 72px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        font-size: 1.15rem;
+        color: var(--dark-green);
+      }
+
+      .brand span {
+        font-size: 1.35rem;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+      }
+
+      .nav-links a {
+        color: var(--gray);
+        font-weight: 600;
+        font-size: 0.92rem;
+        transition: color 0.15s;
+      }
+
+      .nav-links a:hover {
+        color: var(--dark-green);
+      }
+
+      .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .network-pill {
+        background: var(--light-green);
+        color: var(--dark-green);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      .network-pill.demo {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .network-pill.active-sepolia {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #86efac;
+      }
+
+      .wallet-btn, .btn {
+        border: 0;
+        cursor: pointer;
+        border-radius: 12px;
+        padding: 10px 16px;
+        font-weight: 700;
+        font-size: 0.92rem;
+        transition: all 0.15s;
+      }
+
+      .wallet-btn, .btn-primary {
+        background: var(--dark-green);
+        color: var(--white);
+      }
+
+      .btn-secondary {
+        background: var(--white);
+        color: var(--dark-green);
+        border: 1px solid #bbf7d0;
+      }
+
+      .btn:hover, .wallet-btn:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+      }
+
+      .btn:disabled, .wallet-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .menu-btn {
+        display: none;
+        background: var(--light-green);
+        border: 0;
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-size: 1.1rem;
+        cursor: pointer;
+      }
+
+      .config-banner {
+        background: #fff7ed;
+        color: #9a3412;
+        border-bottom: 1px solid #fed7aa;
+        padding: 10px 16px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .config-banner code {
+        background: #ffedd5;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+      }
+
+      .config-banner button {
+        background: #c2410c;
+        color: white;
+        border: 0;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .network-warning {
+        background: #fef2f2;
+        color: #991b1b;
+        text-align: center;
+        padding: 10px 16px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .hero {
+        padding: 72px 0 40px;
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 36px;
+        align-items: center;
+      }
+
+      .eyebrow {
+        color: var(--dark-green);
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        margin-bottom: 10px;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 5vw, 3.4rem);
+        line-height: 1.15;
+        margin-bottom: 16px;
+        color: #0f172a;
+      }
+
+      .lead {
+        color: var(--gray);
+        font-size: 1.08rem;
+        margin-bottom: 24px;
+        max-width: 58ch;
+      }
+
+      .hero-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .journey-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
+        border: 1px solid #bbf7d0;
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+        padding: 28px;
+      }
+
+      .journey-title {
+        font-weight: 800;
+        margin-bottom: 18px;
+        font-size: 1.1rem;
+      }
+
+      .journey-steps {
+        display: grid;
+        gap: 12px;
+      }
+
+      .journey-step {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--white);
+        border-radius: 14px;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+      }
+
+      .journey-step .icon {
+        width: 40px;
+        height: 40px;
+        display: grid;
+        place-items: center;
+        background: var(--light-green);
+        border-radius: 12px;
+        font-size: 1.2rem;
+      }
+
+      .section {
+        padding: 56px 0;
+      }
+
+      .section-head {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+
+      .section-head h2 {
+        font-size: 2rem;
+        margin-bottom: 8px;
+      }
+
+      .section-head p {
+        color: var(--gray);
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+
+      .stat-card, .card {
+        background: var(--white);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+        padding: 22px;
+      }
+
+      .stat-card {
+        text-align: center;
+      }
+
+      .stat-card .check {
+        color: var(--green);
+        font-size: 1.4rem;
+        font-weight: 800;
+      }
+
+      .stat-card h3 {
+        margin: 8px 0 4px;
+      }
+
+      .stat-card p, .muted {
+        color: var(--gray);
+        font-size: 0.95rem;
+      }
+
+      .search-box {
+        display: flex;
+        gap: 10px;
+        max-width: 640px;
+        margin: 0 auto 28px;
+      }
+
+      .search-box input,
+      .form-grid input,
+      .form-grid select,
+      .form-grid textarea {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px 14px;
+        background: var(--white);
+        color: var(--text);
+        font-size: 0.95rem;
+        transition: border-color 0.15s;
+      }
+
+      .search-box input:focus,
+      .form-grid input:focus,
+      .form-grid select:focus,
+      .form-grid textarea:focus {
+        outline: none;
+        border-color: var(--dark-green);
+      }
+
+      .trace-result {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      .product-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.4rem;
+        margin-bottom: 16px;
+      }
+
+      .meta {
+        display: grid;
+        gap: 10px;
+      }
+
+      .meta div {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px dashed var(--border);
+        padding-bottom: 8px;
+        font-size: 0.95rem;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--light-green);
+        color: var(--dark-green);
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-weight: 700;
+        font-size: 0.85rem;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 0;
+      }
+
+      .timeline-item {
+        display: grid;
+        grid-template-columns: 28px 1fr;
+        gap: 12px;
+      }
+
+      .rail {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .dot {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--green);
+        color: white;
+        display: grid;
+        place-items: center;
+        font-size: 0.75rem;
+        font-weight: 800;
+      }
+
+      .line {
+        width: 2px;
+        flex: 1;
+        background: #bbf7d0;
+        min-height: 28px;
+      }
+
+      .event-card {
+        background: #f8fafc;
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+        border: 1px solid var(--border);
+      }
+
+      .event-card strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--dark-green);
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 14px;
+        max-width: 720px;
+        margin: 0 auto;
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        font-weight: 700;
+        font-size: 0.92rem;
+      }
+
+      .tx-banner {
+        margin-top: 16px;
+        border-radius: 14px;
+        padding: 14px 16px;
+        font-weight: 600;
+        font-size: 0.92rem;
+      }
+
+      .tx-pending {
+        background: #ecfeff;
+        color: #155e75;
+        border: 1px solid #a5f3fc;
+      }
+
+      .tx-success {
+        background: var(--light-green);
+        color: var(--dark-green);
+        border: 1px solid #86efac;
+      }
+
+      .tx-error {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+      }
+
+      .tx-hash {
+        display: block;
+        margin-top: 8px;
+        word-break: break-all;
+        font-weight: 500;
+        font-size: 0.88rem;
+      }
+
+      .hash-link {
+        color: var(--dark-green);
+        text-decoration: underline;
+      }
+
+      .footer {
+        padding: 32px 0 48px;
+        color: var(--gray);
+        text-align: center;
+        border-top: 1px solid var(--border);
+        background: #fff;
+      }
+
+      /* Modals */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(4px);
+        display: none;
+        place-items: center;
+        z-index: 100;
+        padding: 16px;
+      }
+
+      .modal-overlay.active {
+        display: grid;
+      }
+
+      .modal-card {
+        background: white;
+        border-radius: 20px;
+        max-width: 520px;
+        width: 100%;
+        padding: 24px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      }
+
+      .modal-card h3 {
+        margin-bottom: 12px;
+      }
+
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      @media (max-width: 900px) {
+        .hero-grid, .trace-result, .stats, .form-row {
+          grid-template-columns: 1fr;
+        }
+
+        .menu-btn {
+          display: inline-flex;
+        }
+
+        .nav-links {
+          display: none;
+          position: absolute;
+          top: 72px;
+          left: 0;
+          right: 0;
+          background: white;
+          flex-direction: column;
+          align-items: flex-start;
+          padding: 16px 20px 20px;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .nav-links.open {
+          display: flex;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .search-box {
+          flex-direction: column;
+        }
+
+        .nav-right .network-pill {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <!-- File Protocol Alert (MetaMask file:// security warning) -->
+      <div id="file-protocol-banner" class="file-banner" style="display: none;">
+        <div class="container" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div>
+            <strong>⚠️ คุณกำลังเปิดไฟล์ผ่าน <code>file:///</code></strong>
+            <span style="font-size: 0.88rem; margin-left: 6px;">Chrome/Edge จะบล็อก MetaMask อัตโนมัติในโหมดนี้</span>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="http://localhost:5173/" class="btn btn-primary" style="padding: 5px 12px; font-size: 0.82rem;">🌐 เปิดผ่าน http://localhost:5173 (แนะนำ)</a>
+            <button type="button" class="btn btn-secondary" style="padding: 5px 12px; font-size: 0.82rem;" onclick="enableDemoWallet()">🎮 ใช้ Demo Wallet</button>
+            <button type="button" class="btn btn-secondary" style="padding: 5px 12px; font-size: 0.82rem;" onclick="openWalletHelpModal()">❓ แก้ไขสิทธิ์</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Config Banner -->
+      <div id="config-banner" class="config-banner">
+        <span>⚙️ Contract Address: <code id="contract-address-display">Not Set (Local Demo Mode)</code></span>
+        <button type="button" onclick="openConfigModal()">ตั้งค่า Contract</button>
+      </div>
+
+      <!-- Network Warning -->
+      <div id="network-warning" class="network-warning" style="display: none;">
+        <span>⚠️ MetaMask is connected to another network. Please switch to Ethereum Sepolia Test Network.</span>
+        <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.8rem;" onclick="switchToSepolia()">Switch to Sepolia</button>
+      </div>
+
+      <!-- Navbar -->
+      <header class="nav">
+        <div class="container nav-inner">
+          <a class="brand" href="#home">
+            <span>🌱</span> GreenTrace
+          </a>
+          <nav class="nav-links" id="nav-menu">
+            <a href="#home">Home</a>
+            <a href="#trace">Trace Food</a>
+            <a href="#add-batch">Add Batch</a>
+            <a href="#update-status">Update Status</a>
+          </nav>
+          <div class="nav-right">
+            <span id="network-badge" class="network-pill demo">Demo Mode</span>
+            <button class="wallet-btn" id="connect-wallet-btn" onclick="handleWalletClick()">
+              Connect Wallet
+            </button>
+            <button class="menu-btn" type="button" onclick="toggleMenu()" aria-label="Menu">
+              ☰
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <!-- Hero Section -->
+        <section class="hero" id="home">
+          <div class="container hero-grid">
+            <div>
+              <p class="eyebrow">From Farm to Table, Verified on Blockchain.</p>
+              <h1>Know Where Your Food Comes From.</h1>
+              <p class="lead">
+                GreenTrace uses blockchain technology to make food supply chains transparent, traceable, and trustworthy.
+                Track the journey of your food from its farm of origin to the consumer using transparent blockchain technology.
+              </p>
+              <div class="hero-actions">
+                <a class="btn btn-primary" href="#trace">Trace a Product</a>
+                <a class="btn btn-secondary" href="#add-batch">Add Food Batch</a>
+              </div>
+            </div>
+            <div class="journey-card">
+              <div class="journey-title">🥬 Organic Lettuce journey</div>
+              <div class="journey-steps">
+                <div class="journey-step">
+                  <div class="icon">🌱</div>
+                  <div>
+                    <strong>Farm</strong>
+                    <div class="muted">Chiang Mai Organic Farm</div>
+                  </div>
+                </div>
+                <div class="journey-step">
+                  <div class="icon">🚚</div>
+                  <div>
+                    <strong>Distributor</strong>
+                    <div class="muted">Regional logistics hub</div>
+                  </div>
+                </div>
+                <div class="journey-step">
+                  <div class="icon">🏪</div>
+                  <div>
+                    <strong>Retailer</strong>
+                    <div class="muted">Green Market Chiang Mai</div>
+                  </div>
+                </div>
+                <div class="journey-step">
+                  <div class="icon">✓</div>
+                  <div>
+                    <strong>Consumer</strong>
+                    <div class="muted">Verified on Sepolia</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Stats Section -->
+        <section class="section" style="padding-top: 8px;">
+          <div class="container stats">
+            <article class="stat-card">
+              <div class="check">✓</div>
+              <h3>Blockchain Verified</h3>
+              <p>Records are written to Ethereum Sepolia.</p>
+            </article>
+            <article class="stat-card">
+              <div class="check">✓</div>
+              <h3>Transparent Records</h3>
+              <p id="stats-events-count">2 traceability events</p>
+            </article>
+            <article class="stat-card">
+              <div class="check">✓</div>
+              <h3>Traceable Batches</h3>
+              <p id="stats-batches-count">1 registered batch</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Trace Food Section -->
+        <section class="section" id="trace">
+          <div class="container">
+            <div class="section-head">
+              <h2>Trace Your Food</h2>
+              <p>Enter a Batch ID to discover the journey of your food.</p>
+            </div>
+            <form class="search-box" onsubmit="handleTrace(event)">
+              <input id="trace-input" value="CM001" placeholder="Enter Batch ID (e.g. CM001)" aria-label="Batch ID" required />
+              <button class="btn btn-primary" type="submit" id="trace-btn">🔍 Trace Product</button>
+            </form>
+            <div id="trace-error" class="tx-banner tx-error" style="display: none; max-width: 640px; margin: 0 auto 20px;"></div>
+            <div id="trace-result-container" class="trace-result">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </section>
+
+        <!-- Register New Food Batch -->
+        <section class="section" id="add-batch">
+          <div class="container">
+            <div class="section-head">
+              <h2>Register a New Food Batch</h2>
+              <p>Farmers record origin details directly on Ethereum Sepolia.</p>
+            </div>
+            <form class="form-grid card" onsubmit="handleAddBatch(event)">
+              <div class="form-row">
+                <label>
+                  Batch ID
+                  <input id="add-batchId" value="CM002" placeholder="e.g. CM002" required />
+                </label>
+                <label>
+                  Product Name
+                  <input id="add-productName" value="Organic Hydroponic Salad" placeholder="e.g. Organic Lettuce" required />
+                </label>
+              </div>
+              <label>
+                Farm Name
+                <input id="add-farmName" value="Royal Project Chiang Mai" placeholder="e.g. Chiang Mai Organic Farm" required />
+              </label>
+              <div class="form-row">
+                <label>
+                  Origin
+                  <input id="add-origin" value="Chiang Mai, Thailand" placeholder="e.g. Chiang Mai, Thailand" required />
+                </label>
+                <label>
+                  Harvest Date
+                  <input id="add-harvestDate" type="date" value="2026-09-29" required />
+                </label>
+              </div>
+              <button class="btn btn-primary" type="submit" id="add-submit-btn">🌱 Register Batch</button>
+              <div id="add-status-banner" class="tx-banner" style="display: none;"></div>
+            </form>
+          </div>
+        </section>
+
+        <!-- Update Food Status -->
+        <section class="section" id="update-status">
+          <div class="container">
+            <div class="section-head">
+              <h2>Update Food Status</h2>
+              <p>Distributors and retailers append a new supply-chain event on-chain.</p>
+            </div>
+            <form class="form-grid card" onsubmit="handleUpdateStatus(event)">
+              <div class="form-row">
+                <label>
+                  Batch ID
+                  <input id="update-batchId" value="CM001" placeholder="CM001" required />
+                </label>
+                <label>
+                  New Status
+                  <select id="update-status-val">
+                    <option value="Harvested">Harvested</option>
+                    <option value="In Transit" selected>In Transit</option>
+                    <option value="At Distributor">At Distributor</option>
+                    <option value="At Retailer">At Retailer</option>
+                    <option value="Sold">Sold</option>
+                  </select>
+                </label>
+              </div>
+              <label>
+                Location
+                <input id="update-location" value="Chiang Mai Distribution Center" placeholder="Chiang Mai Distribution Center" required />
+              </label>
+              <label>
+                Description
+                <textarea id="update-desc" rows="3" placeholder="Batch is being transported to the local distributor." required>Batch is currently sorted and packaged for express transit to Bangkok.</textarea>
+              </label>
+              <button class="btn btn-primary" type="submit" id="update-submit-btn">🚚 Update Status</button>
+              <div id="update-status-banner" class="tx-banner" style="display: none;"></div>
+            </form>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div class="container">
+          GreenTrace · Blockchain Food Traceability · Ethereum Sepolia
+        </div>
+      </footer>
+    </div>
+
+    <!-- Contract Config Modal -->
+    <div id="config-modal" class="modal-overlay">
+      <div class="modal-card">
+        <h3>⚙️ ตั้งค่า Smart Contract Address</h3>
+        <p class="muted" style="margin-bottom: 16px;">
+          หลังจาก Deploy <code>FoodTraceability.sol</code> บน Remix (Sepolia) ให้คัดลอก Contract Address มาวางที่นี่
+        </p>
+        <label>
+          Contract Address (0x...)
+          <input id="modal-contract-address" placeholder="0x..." />
+        </label>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="closeConfigModal()">ยกเลิก</button>
+          <button class="btn btn-primary" onclick="saveContractAddress()">บันทึก</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wallet Help Modal -->
+    <div id="wallet-help-modal" class="modal-overlay">
+      <div class="modal-card" style="max-width: 560px;">
+        <h3 style="color: #166534; display: flex; align-items: center; gap: 8px;">
+          🦊 แนะนำการเชื่อมต่อ MetaMask
+        </h3>
+        <div style="font-size: 0.92rem; color: #334155; margin-top: 14px; line-height: 1.6;">
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+            <strong style="color: #166534;">วิธีที่ 1 (แนะนำที่สุด): เปิดผ่าน Localhost</strong>
+            <p style="margin: 4px 0 10px; font-size: 0.88rem; color: #4b5563;">
+              เนื่องจาก Chrome/Edge บล็อก MetaMask ไม่ให้ทำงานกับไฟล์เครื่อง (<code>file:///</code>) การเปิดผ่าน Localhost จะทำให้ MetaMask เชื่อมต่อได้ทันที 100%:
+            </p>
+            <a href="http://localhost:5173/" class="btn btn-primary" style="font-size: 0.88rem; padding: 7px 16px; display: inline-block;">
+              🌐 คลิกเพื่อเปิด http://localhost:5173
+            </a>
+          </div>
+
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+            <strong>วิธีที่ 2: ใช้กระเป๋าจำลอง (Demo Wallet)</strong>
+            <p style="margin: 4px 0 10px; font-size: 0.88rem; color: #4b5563;">
+              หากต้องการนำเสนองานหรือทดสอบฟังก์ชัน เพิ่มล็อต/อัปเดตสถานะ/ตรวจสอบประวัติโดยไม่ต้องใช้ MetaMask:
+            </p>
+            <button type="button" class="btn btn-secondary" style="font-size: 0.88rem; padding: 6px 14px;" onclick="enableDemoWallet()">
+              🎮 ใช้งาน Demo Wallet ทันที
+            </button>
+          </div>
+
+          <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 14px;">
+            <strong style="color: #92400e;">วิธีที่ 3: เปิดสิทธิ์ file:// ใน MetaMask</strong>
+            <p style="margin-top: 4px; font-size: 0.86rem; color: #78350f;">
+              เปิด Chrome ไปที่ <code>chrome://extensions</code> → หา MetaMask → คลิก <strong>Details (รายละเอียด)</strong> → เลื่อนลงมาเปิดสวิตช์ <strong>"Allow access to file URLs" (อนุญาตให้เข้าถึง URL ของไฟล์)</strong> แล้วรีเฟรชหน้านี้ครับ
+            </p>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="closeWalletHelpModal()">ปิดหน้าต่าง</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Contract & Chain Constants
+      const SEPOLIA_CHAIN_ID_HEX = "0xaa36a7";
+      const SEPOLIA_CHAIN_ID = 11155111n;
+      const EXPLORER_TX_BASE = "https://sepolia.etherscan.io/tx/";
+
+      const CONTRACT_ABI = [
+        "event BatchCreated(string batchId, address creator)",
+        "event StatusUpdated(string batchId, string status, string location, address updatedBy)",
+        "function createBatch(string batchId, string productName, string farmName, string origin, string harvestDate) public",
+        "function updateStatus(string batchId, string status, string location, string description) public",
+        "function getBatch(string batchId) public view returns (tuple(string batchId, string productName, string farmName, string origin, string harvestDate, string currentStatus, string currentLocation, address creator, bool exists))",
+        "function getHistory(string batchId) public view returns (tuple(string status, string location, string description, uint256 timestamp, address updatedBy)[])",
+        "function getBatchCount() public view returns (uint256)",
+        "function getAllBatchIds() public view returns (string[])",
+        "function getTotalEvents() public view returns (uint256)"
+      ];
+
+      // Local Demo State (Works without contract / offline fallback)
+      const LOCAL_REGISTRY = {
+        "CM001": {
+          batch: {
+            batchId: "CM001",
+            productName: "Organic Lettuce",
+            farmName: "Chiang Mai Organic Farm",
+            origin: "Chiang Mai, Thailand",
+            harvestDate: "28/09/2026",
+            currentStatus: "In Transit",
+            currentLocation: "Chiang Mai Distribution Center",
+            creator: "0x71C8364437a920fa28f46028d3C27588e433FB29"
+          },
+          history: [
+            {
+              status: "Registered",
+              location: "Chiang Mai, Thailand",
+              description: "Batch registered at Chiang Mai Organic Farm",
+              timestamp: 1759032000,
+              updatedBy: "0x71C8364437a920fa28f46028d3C27588e433FB29"
+            },
+            {
+              status: "In Transit",
+              location: "Chiang Mai Distribution Center",
+              description: "Batch is being transported to the local distributor.",
+              timestamp: 1759039200,
+              updatedBy: "0x93FA53198030B1C4729177F87661072F073e4412"
+            }
+          ]
+        }
+      };
+
+      // App State
+      let contractAddress = localStorage.getItem("greentrace_contract_address") || "";
+      let userAccount = null;
+      let userChainId = null;
+      let isDemoWallet = false;
+
+      function getEthereumProvider() {
+        if (typeof window === "undefined" || !window.ethereum) return null;
+        if (Array.isArray(window.ethereum.providers)) {
+          const mm = window.ethereum.providers.find((p) => p.isMetaMask);
+          if (mm) return mm;
+        }
+        return window.ethereum;
+      }
+
+      function isConfigured() {
+        return Boolean(contractAddress && contractAddress.startsWith("0x") && contractAddress.length === 42);
+      }
+
+      function updateUIHeader() {
+        const display = document.getElementById("contract-address-display");
+        const badge = document.getElementById("network-badge");
+        if (isConfigured()) {
+          display.textContent = `${contractAddress.slice(0, 6)}...${contractAddress.slice(-4)}`;
+          badge.textContent = "Sepolia Network";
+          badge.className = "network-pill active-sepolia";
+        } else {
+          display.textContent = "Not Set (Local Demo Mode)";
+          badge.textContent = isDemoWallet ? "Demo Wallet" : "Demo Mode";
+          badge.className = "network-pill demo";
+        }
+
+        const btn = document.getElementById("connect-wallet-btn");
+        if (userAccount) {
+          btn.textContent = `${userAccount.slice(0, 5)}...${userAccount.slice(-3)}`;
+          btn.title = `Connected: ${userAccount}`;
+        } else {
+          btn.textContent = "Connect Wallet";
+          btn.title = "Click to connect MetaMask";
+        }
+
+        updateStats();
+      }
+
+      function updateStats() {
+        const batchEl = document.getElementById("stats-batches-count");
+        const eventEl = document.getElementById("stats-events-count");
+
+        const eth = getEthereumProvider();
+        if (isConfigured() && eth && typeof ethers !== "undefined" && !isDemoWallet) {
+          try {
+            const provider = new ethers.BrowserProvider(eth);
+            const contract = new ethers.Contract(contractAddress, CONTRACT_ABI, provider);
+            contract.getBatchCount().then(c => {
+              batchEl.textContent = `${c.toString()} registered batches`;
+            }).catch(() => {});
+            contract.getTotalEvents().then(e => {
+              eventEl.textContent = `${e.toString()} traceability events`;
+            }).catch(() => {});
+            return;
+          } catch(e) {}
+        }
+
+        // Fallback to local count
+        const batchKeys = Object.keys(LOCAL_REGISTRY);
+        const totalEvents = batchKeys.reduce((acc, k) => acc + (LOCAL_REGISTRY[k].history.length || 0), 0);
+        batchEl.textContent = `${batchKeys.length} registered batches ${userAccount ? "· Connected" : ""}`;
+        eventEl.textContent = `${totalEvents} traceability events`;
+      }
+
+      // Modal Controls
+      function openConfigModal() {
+        document.getElementById("modal-contract-address").value = contractAddress;
+        document.getElementById("config-modal").classList.add("active");
+      }
+
+      function closeConfigModal() {
+        document.getElementById("config-modal").classList.remove("active");
+      }
+
+      function saveContractAddress() {
+        const val = document.getElementById("modal-contract-address").value.trim();
+        contractAddress = val;
+        localStorage.setItem("greentrace_contract_address", val);
+        closeConfigModal();
+        updateUIHeader();
+      }
+
+      function openWalletHelpModal() {
+        document.getElementById("wallet-help-modal").classList.add("active");
+      }
+
+      function closeWalletHelpModal() {
+        document.getElementById("wallet-help-modal").classList.remove("active");
+      }
+
+      function enableDemoWallet() {
+        isDemoWallet = true;
+        userAccount = "0x71C8364437a920fa28f46028d3C27588e433FB29";
+        userChainId = SEPOLIA_CHAIN_ID_HEX;
+        document.getElementById("network-warning").style.display = "none";
+        closeWalletHelpModal();
+        updateUIHeader();
+      }
+
+      function toggleMenu() {
+        document.getElementById("nav-menu").classList.toggle("open");
+      }
+
+      // Formatters & Icons
+      function productIcon(name) {
+        const s = (name || "").toLowerCase();
+        if (s.includes("lettuce") || s.includes("salad")) return "🥬";
+        if (s.includes("rice")) return "🌾";
+        if (s.includes("tomato")) return "🍅";
+        if (s.includes("mango")) return "🥭";
+        return "🌱";
+      }
+
+      function statusIcon(status) {
+        const s = (status || "").toLowerCase();
+        if (s.includes("register") || s.includes("farm")) return "🌱";
+        if (s.includes("harvest")) return "📦";
+        if (s.includes("transit")) return "🚚";
+        if (s.includes("distributor")) return "📦";
+        if (s.includes("retail")) return "🏪";
+        if (s.includes("sold")) return "✓";
+        return "🔗";
+      }
+
+      function formatTimestamp(value) {
+        const sec = Number(value);
+        if (!sec) return "";
+        return new Date(sec * 1000).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric"
+        });
+      }
+
+      // Web3 & MetaMask Connection
+      async function handleWalletClick() {
+        const eth = getEthereumProvider();
+        if (!eth) {
+          openWalletHelpModal();
+          return;
+        }
+
+        const btn = document.getElementById("connect-wallet-btn");
+        btn.textContent = "Connecting...";
+
+        try {
+          const accounts = await eth.request({ method: "eth_requestAccounts" });
+          if (accounts && accounts.length > 0) {
+            userAccount = accounts[0];
+            isDemoWallet = false;
+            const chainId = await eth.request({ method: "eth_chainId" });
+            userChainId = chainId;
+            checkNetwork(chainId);
+            updateUIHeader();
+
+            if (chainId && chainId.toLowerCase() !== SEPOLIA_CHAIN_ID_HEX) {
+              try {
+                await switchToSepolia();
+              } catch (e) {
+                console.warn("Could not auto-switch network:", e);
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Wallet connection error:", err);
+          if (err.code === 4001) {
+            alert("คำขอเชื่อมต่อถูกปฏิเสธใน MetaMask");
+          } else {
+            alert(err.message || "ไม่สามารถเชื่อมต่อ MetaMask ได้");
+          }
+        } finally {
+          updateUIHeader();
+        }
+      }
+
+      function checkNetwork(chainId) {
+        const warning = document.getElementById("network-warning");
+        if (isDemoWallet) {
+          warning.style.display = "none";
+          return;
+        }
+        if (chainId && chainId.toLowerCase() !== SEPOLIA_CHAIN_ID_HEX) {
+          warning.style.display = "flex";
+        } else {
+          warning.style.display = "none";
+        }
+      }
+
+      async function switchToSepolia() {
+        const eth = getEthereumProvider();
+        if (!eth) return;
+        try {
+          await eth.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: SEPOLIA_CHAIN_ID_HEX }]
+          });
+          document.getElementById("network-warning").style.display = "none";
+        } catch (error) {
+          if (error.code === 4902 || error?.data?.originalError?.code === 4902 || /unrecognized/i.test(error.message)) {
+            await eth.request({
+              method: "wallet_addEthereumChain",
+              params: [{
+                chainId: SEPOLIA_CHAIN_ID_HEX,
+                chainName: "Sepolia Test Network",
+                nativeCurrency: { name: "SepoliaETH", symbol: "ETH", decimals: 18 },
+                rpcUrls: ["https://rpc.sepolia.org", "https://ethereum-sepolia-rpc.publicnode.com"],
+                blockExplorerUrls: ["https://sepolia.etherscan.io"]
+              }]
+            });
+            document.getElementById("network-warning").style.display = "none";
+          }
+        }
+      }
+
+      const eth = getEthereumProvider();
+      if (eth) {
+        eth.on("accountsChanged", (accounts) => {
+          userAccount = accounts.length ? accounts[0] : null;
+          isDemoWallet = false;
+          updateUIHeader();
+        });
+        eth.on("chainChanged", (chainId) => {
+          userChainId = chainId;
+          checkNetwork(chainId);
+          updateUIHeader();
+        });
+      }
+
+      // Trace Product Logic
+      async function handleTrace(e) {
+        e.preventDefault();
+        const batchId = document.getElementById("trace-input").value.trim();
+        const errEl = document.getElementById("trace-error");
+        const resEl = document.getElementById("trace-result-container");
+        const btn = document.getElementById("trace-btn");
+
+        errEl.style.display = "none";
+        resEl.innerHTML = "";
+
+        if (!batchId) {
+          errEl.textContent = "Please enter a Batch ID.";
+          errEl.style.display = "block";
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "Tracing...";
+
+        try {
+          let batch = null;
+          let history = [];
+
+          const ethProvider = getEthereumProvider();
+          if (isConfigured() && ethProvider && typeof ethers !== "undefined" && !isDemoWallet) {
+            const provider = new ethers.BrowserProvider(ethProvider);
+            const contract = new ethers.Contract(contractAddress, CONTRACT_ABI, provider);
+            const [b, h] = await Promise.all([
+              contract.getBatch(batchId),
+              contract.getHistory(batchId)
+            ]);
+            batch = {
+              batchId: b.batchId,
+              productName: b.productName,
+              farmName: b.farmName,
+              origin: b.origin,
+              harvestDate: b.harvestDate,
+              currentStatus: b.currentStatus,
+              currentLocation: b.currentLocation,
+              creator: b.creator
+            };
+            history = h.map(item => ({
+              status: item.status,
+              location: item.location,
+              description: item.description,
+              timestamp: item.timestamp,
+              updatedBy: item.updatedBy
+            }));
+          } else {
+            // Local Registry Lookup
+            const item = LOCAL_REGISTRY[batchId];
+            if (!item) {
+              throw new Error("No batch found for this Batch ID (" + batchId + "). Try searching 'CM001'.");
+            }
+            batch = item.batch;
+            history = item.history;
+          }
+
+          renderTraceResult(batch, history);
+        } catch (err) {
+          errEl.textContent = err.reason || err.message || "Failed to trace batch.";
+          errEl.style.display = "block";
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "🔍 Trace Product";
+        }
+      }
+
+      function renderTraceResult(batch, history) {
+        const container = document.getElementById("trace-result-container");
+        const icon = productIcon(batch.productName);
+
+        let timelineHtml = '<div class="timeline">';
+        history.forEach((event, i) => {
+          const isLast = i === history.length - 1;
+          timelineHtml += `
+            <div class="timeline-item">
+              <div class="rail">
+                <div class="dot">✓</div>
+                ${!isLast ? '<div class="line"></div>' : ''}
+              </div>
+              <div class="event-card">
+                <strong>${statusIcon(event.status)} ${event.status}</strong>
+                <div>${event.description}</div>
+                <div class="muted">${event.location} · ${formatTimestamp(event.timestamp)}</div>
+              </div>
+            </div>
+          `;
+        });
+        timelineHtml += '</div>';
+
+        container.innerHTML = `
+          <article class="card">
+            <h3 class="product-title">${icon} ${batch.productName}</h3>
+            <div class="meta">
+              <div><span>Batch ID</span><strong>${batch.batchId}</strong></div>
+              <div><span>Farm</span><strong>${batch.farmName}</strong></div>
+              <div><span>Origin</span><strong>${batch.origin}</strong></div>
+              <div><span>Harvest Date</span><strong>${batch.harvestDate}</strong></div>
+              <div><span>Current Status</span><span class="badge">${batch.currentStatus}</span></div>
+              <div><span>Current Location</span><strong>${batch.currentLocation}</strong></div>
+              <div><span>Creator</span><span class="muted" style="font-size:0.8rem">${batch.creator.slice(0,8)}...${batch.creator.slice(-6)}</span></div>
+            </div>
+          </article>
+          <article class="card">
+            <h3 style="margin-bottom: 16px;">Traceability timeline</h3>
+            ${timelineHtml}
+          </article>
+        `;
+      }
+
+      // Add Batch Logic
+      async function handleAddBatch(e) {
+        e.preventDefault();
+        const batchId = document.getElementById("add-batchId").value.trim();
+        const productName = document.getElementById("add-productName").value.trim();
+        const farmName = document.getElementById("add-farmName").value.trim();
+        const origin = document.getElementById("add-origin").value.trim();
+        const harvestDateVal = document.getElementById("add-harvestDate").value;
+
+        const banner = document.getElementById("add-status-banner");
+        const btn = document.getElementById("add-submit-btn");
+
+        banner.style.display = "block";
+        banner.className = "tx-banner tx-pending";
+        banner.innerHTML = "🔄 Processing batch registration...";
+        btn.disabled = true;
+
+        const dateParts = harvestDateVal.split("-");
+        const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : harvestDateVal;
+
+        try {
+          const ethProvider = getEthereumProvider();
+          if (isConfigured() && ethProvider && typeof ethers !== "undefined" && !isDemoWallet) {
+            if (!userAccount) await handleWalletClick();
+            banner.innerHTML = "🔄 Waiting for MetaMask confirmation...";
+            const provider = new ethers.BrowserProvider(ethProvider);
+            const signer = await provider.getSigner();
+            const contract = new ethers.Contract(contractAddress, CONTRACT_ABI, signer);
+            const tx = await contract.createBatch(batchId, productName, farmName, origin, formattedDate);
+            banner.innerHTML = `⛓️ Transaction submitted. Waiting for blockchain confirmation...<br><a class="tx-hash hash-link" href="${EXPLORER_TX_BASE + tx.hash}" target="_blank">View on Sepolia Etherscan: ${tx.hash}</a>`;
+            await tx.wait();
+            banner.className = "tx-banner tx-success";
+            banner.innerHTML = `✓ Batch <strong>${batchId}</strong> successfully registered on Ethereum Sepolia!<br><a class="tx-hash hash-link" href="${EXPLORER_TX_BASE + tx.hash}" target="_blank">Etherscan: ${tx.hash}</a>`;
+          } else {
+            // Local simulation
+            await new Promise(r => setTimeout(r, 600));
+            if (LOCAL_REGISTRY[batchId]) throw new Error("Batch ID already exists in registry.");
+            LOCAL_REGISTRY[batchId] = {
+              batch: {
+                batchId,
+                productName,
+                farmName,
+                origin,
+                harvestDate: formattedDate,
+                currentStatus: "Registered",
+                currentLocation: origin,
+                creator: userAccount || "0x71C8364437a920fa28f46028d3C27588e433FB29"
+              },
+              history: [{
+                status: "Registered",
+                location: origin,
+                description: `Batch registered at ${farmName}`,
+                timestamp: Math.floor(Date.now() / 1000),
+                updatedBy: userAccount || "0x71C8364437a920fa28f46028d3C27588e433FB29"
+              }]
+            };
+            banner.className = "tx-banner tx-success";
+            banner.innerHTML = `✓ Batch <strong>${batchId}</strong> (${productName}) registered successfully! You can now search for it in Trace Food.`;
+          }
+          updateStats();
+        } catch (err) {
+          banner.className = "tx-banner tx-error";
+          banner.textContent = err.reason || err.message || "Failed to register batch.";
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      // Update Status Logic
+      async function handleUpdateStatus(e) {
+        e.preventDefault();
+        const batchId = document.getElementById("update-batchId").value.trim();
+        const nextStatus = document.getElementById("update-status-val").value;
+        const location = document.getElementById("update-location").value.trim();
+        const desc = document.getElementById("update-desc").value.trim();
+
+        const banner = document.getElementById("update-status-banner");
+        const btn = document.getElementById("update-submit-btn");
+
+        banner.style.display = "block";
+        banner.className = "tx-banner tx-pending";
+        banner.innerHTML = "🔄 Processing status update...";
+        btn.disabled = true;
+
+        try {
+          const ethProvider = getEthereumProvider();
+          if (isConfigured() && ethProvider && typeof ethers !== "undefined" && !isDemoWallet) {
+            if (!userAccount) await handleWalletClick();
+            banner.innerHTML = "🔄 Waiting for MetaMask confirmation...";
+            const provider = new ethers.BrowserProvider(ethProvider);
+            const signer = await provider.getSigner();
+            const contract = new ethers.Contract(contractAddress, CONTRACT_ABI, signer);
+            const tx = await contract.updateStatus(batchId, nextStatus, location, desc);
+            banner.innerHTML = `⛓️ Transaction submitted. Waiting for blockchain confirmation...<br><a class="tx-hash hash-link" href="${EXPLORER_TX_BASE + tx.hash}" target="_blank">View on Sepolia Etherscan: ${tx.hash}</a>`;
+            await tx.wait();
+            banner.className = "tx-banner tx-success";
+            banner.innerHTML = `✓ Transaction confirmed! Status for <strong>${batchId}</strong> is now <strong>${nextStatus}</strong>.<br><a class="tx-hash hash-link" href="${EXPLORER_TX_BASE + tx.hash}" target="_blank">Etherscan: ${tx.hash}</a>`;
+          } else {
+            // Local simulation
+            await new Promise(r => setTimeout(r, 600));
+            const item = LOCAL_REGISTRY[batchId];
+            if (!item) throw new Error("Batch not found for ID: " + batchId);
+            item.batch.currentStatus = nextStatus;
+            item.batch.currentLocation = location;
+            item.history.push({
+              status: nextStatus,
+              location: location,
+              description: desc,
+              timestamp: Math.floor(Date.now() / 1000),
+              updatedBy: userAccount || "0x93FA53198030B1C4729177F87661072F073e4412"
+            });
+            banner.className = "tx-banner tx-success";
+            banner.innerHTML = `✓ Status for <strong>${batchId}</strong> updated to <strong>${nextStatus}</strong>! Trace view has been updated.`;
+          }
+          updateStats();
+          if (document.getElementById("trace-input").value.trim() === batchId) {
+            handleTrace(e);
+          }
+        } catch (err) {
+          banner.className = "tx-banner tx-error";
+          banner.textContent = err.reason || err.message || "Failed to update status.";
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      // Initialize on page load
+      window.addEventListener("DOMContentLoaded", () => {
+        // Check if on file:// and MetaMask is blocked
+        if (window.location.protocol === "file:" && !getEthereumProvider()) {
+          document.getElementById("file-protocol-banner").style.display = "block";
+        }
+        updateUIHeader();
+        handleTrace(new Event("submit"));
+      });
+    </script>
+  </body>
+</html>
